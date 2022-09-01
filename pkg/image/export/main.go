@@ -555,18 +555,24 @@ if [[ $help ]]; then
     exit 0
 fi
 
+old_pulled="$(docker images |awk '{print $1":"$2}')"
 pulled=""
 while IFS= read -r i; do
     [ -z "${i}" ] && continue
-    if docker pull "${i}" > /dev/null 2>&1; then
-        echo "Image pull success: ${i}"
-        pulled="${pulled} ${i}"
-    else
-        if docker inspect "${i}" > /dev/null 2>&1; then
-            pulled="${pulled} ${i}"		
-        else
-            echo "Image pull failed: ${i}"
-        fi
+	image_status="$(echo "${old_pulled}" | grep "${i}")"
+	if [ -z "${image_status}" ]; then
+    	if docker pull "${i}" > /dev/null 2>&1; then
+        	echo "Image pull success: ${i}"
+        	pulled="${pulled} ${i}"
+    	else
+        	if docker inspect "${i}" > /dev/null 2>&1; then
+            	pulled="${pulled} ${i}"		
+        	else
+            	echo "Image pull failed: ${i}"
+        	fi
+    	fi
+	else
+        echo "Image pulled: ${i}"
     fi
 done < "${list}"
 
